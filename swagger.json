@@ -1,0 +1,705 @@
+{
+  "openapi": "3.1.0",
+  "info": {
+    "title": "Sofware Requirements Game API",
+    "description": "API para el juego de clasificación de requerimientos de software.",
+    "version": "1.0.0"
+  },
+  "servers": [
+    {
+      "url": "/ReqScapeNew",
+      "description": "URL base del servidor [PROD]"
+    },
+    {
+      "url": "/",
+      "description": "URL base del servidor [DEV]"
+    }
+  ],
+  "tags": [
+    {
+      "name": "Auth",
+      "description": "Autenticación de usuarios."
+    },
+    {
+      "name": "Course",
+      "description": "Gestión de cursos."
+    },
+    {
+      "name": "Admin",
+      "description": "Configuración de cursos."
+    }
+  ],
+  "components": {
+    "securitySchemes": {
+      "bearerAuth": {
+        "type": "http",
+        "scheme": "bearer",
+        "bearerFormat": "JWT"
+      }
+    },
+    "schemas": {
+      "AuthResponse": {
+        "type": "object",
+        "properties": {
+          "ok": { "type": "boolean" },
+          "token": { "type": "string" },
+          "user": {
+            "type": "object",
+            "properties": {
+              "id": { "type": "integer" },
+              "email": { "type": "string" },
+              "first_name": { "type": "string" },
+              "last_name": { "type": "string" },
+              "role": { "type": "string" }
+            }
+          }
+        }
+      },
+      "Course": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "integer",
+            "description": "Identificador único del curso."
+          },
+          "course_name": {
+            "type": "string",
+            "description": "Nombre del curso."
+          },
+          "course_code": {
+            "type": "string",
+            "description": "Código único del curso."
+          },
+          "user_id": {
+            "type": "integer",
+            "description": "ID del usuario creador del curso."
+          },
+          "created_at": {
+            "type": "string",
+            "format": "date-time",
+            "description": "Fecha y hora de creación del curso."
+          },
+          "max_attempts": {
+            "type": "integer",
+            "description": "Número máximo de intentos permitidos."
+          }
+        },
+        "required": ["id", "course_name", "course_code", "user_id", "created_at", "max_attempts"]
+      },
+      "Requirement": {
+        "type": "object",
+        "properties": {
+          "id": { "type": "integer" },
+          "text": { "type": "string" },
+          "isValid": { "type": "boolean" },
+          "feedback": { "type": "string" }
+        }
+      },
+      "CourseStats": {
+        "type": "object",
+        "properties": {
+          "score_average": { "type": "number" },
+          "time_average": { "type": "number" },
+          "dropout_rate": { "type": "number" },
+          "grades_distribution": {
+            "type": "array",
+            "items": { "$ref": "#/components/schemas/GradesDistribution" }
+          },
+          "total_attempts": { "type": "integer" }
+        }
+      },
+      "GradesDistribution": {
+        "type": "object",
+        "properties": {
+          "score_range": { "type": "string" },
+          "count": { "type": "integer" }
+        }
+      },
+      "SurveyResponse": {
+        "type": "object",
+        "properties": {
+          "surveyQuestionId": { "type": "integer" },
+          "response": { "type": "integer" }
+        }
+      }
+    }
+  },
+  "security": [{ "bearerAuth": [] }],
+  "paths": {
+    "/admin/course-content/{id}": {
+      "get": {
+        "tags": ["Admin"],
+        "summary": "Obtener el banco de requerimientos de un curso.",
+        "description": "Obtiene el banco de requerimientos generados en la creación del curso a partir de su ID.",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "id",
+            "required": true,
+            "schema": { "type": "integer" }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Banco de requerimientos obtenido exitosamente.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": { "$ref": "#/components/schemas/Requirement" }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/admin/course-stats/{id}": {
+      "get": {
+        "tags": ["Admin"],
+        "summary": "Obtener las estadisticas de un curso.",
+        "description": "Obtiene las estadisticas de un curso a partir de su ID.",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "id",
+            "required": true,
+            "schema": { "type": "integer" }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Estadisticas del curso obtenidas exitosamente.",
+            "content": { "application/json": { "schema": { "$ref": "#/components/schemas/CourseStats" } } }
+          }
+        }
+      }
+    },
+    "/admin/requirements/{id}": {
+      "put": {
+        "tags": ["Admin"],
+        "summary": "Editar un requisito.",
+        "description": "Edita un requisito a partir de su ID.",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "id",
+            "required": true,
+            "schema": { "type": "integer" }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": { "schema": { "$ref": "#/components/schemas/Requirement" } }
+          }
+        },
+        "responses": {
+          "200": { "description": "Requisito editado exitosamente." }
+        }
+      }
+    },
+    "/auth/login": {
+      "post": {
+        "security": [],
+        "tags": ["Auth"],
+        "summary": "Login de usuario.",
+        "description": "Autentica a un usuario y devuelve un token.",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "email": {
+                    "type": "string"
+                  },
+                  "password": {
+                    "type": "string"
+                  }
+                },
+                "required": ["email", "password"]
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Login exitoso.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AuthResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/auth/register": {
+      "post": {
+        "security": [],
+        "tags": ["Auth"],
+        "summary": "Registro de usuario.",
+        "description": "Registra un nuevo usuario en el sistema.",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "email": { "type": "string" },
+                  "password": { "type": "string" },
+                  "first_name": { "type": "string" },
+                  "last_name": { "type": "string" }
+                },
+                "required": ["email", "password", "first_name", "last_name"]
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Registro exitoso.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AuthResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/auth/refresh-token": {
+      "get": {
+        "tags": ["Auth"],
+        "summary": "Refrescar token de usuario.",
+        "description": "Refresca el token de usuario actual.",
+        "responses": {
+          "200": {
+            "description": "Token refrescado exitosamente.",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/AuthResponse" }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/auth/make-admin": {
+      "put": {
+        "tags": ["Auth"],
+        "summary": "Hacer administrador a un usuario.",
+        "description": "Hace administrador a un usuario a partir de su email.",
+        "requestBody": {
+          "content": {
+            "application/json": { "schema": { "type": "object", "properties": { "email": { "type": "string" } } } }
+          }
+        },
+        "responses": { "200": {
+          "description": "Usuario actualizado correctamente.", 
+          "content": {
+            "application/json": {
+              "schema": { 
+                "type": "object", 
+                "properties": { 
+                  "ok": { "type": "boolean" },
+                  "message": { 
+                    "type": "string" 
+                    } 
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/courses": {
+      "get": {
+        "tags": ["Course"],
+        "summary": "Obtener todos los cursos creados por el usuario autenticado.",
+        "responses": {
+          "200": {
+            "description": "Lista de cursos creados por el usuario autenticado.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/Course"
+                  }
+                }
+              }
+            }
+          }
+        }
+      },
+      "post": {
+        "tags": ["Course"],
+        "summary": "Crear un curso.",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "course_code": { "type": "string" },
+                  "course_name": { "type": "string" },
+                  "max_attempts": { "type": "integer" },
+                  "items_per_attempt": { "type": "integer" },
+                  "language": { "type": "string" },
+                  "additional_context": { "type": "string" }
+                },
+                "required": ["course_code", "course_name", "max_attempts"]
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Curso creado exitosamente.",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/Course" }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/courses/{id}": {
+      "delete": {
+        "tags": ["Course"],
+        "summary": "Eliminar un curso.",
+        "description": "Elimina un curso a partir de su ID.",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "id",
+            "required": true,
+            "schema": {
+              "type": "integer"
+            },
+            "description": "Identificador único del curso."
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Curso eliminado exitosamente.",
+            "content": { "application/json": { "schema": { "type": "object", "properties": { "message": { "type": "string" } } } } }
+          }
+        }
+      }
+    },
+    "/courses/enrolled": {
+      "get": {
+        "tags": ["Course"],
+        "summary": "Obtener todos los cursos inscritos por el usuario autenticado.",
+        "responses": {
+          "200": {
+            "description": "Lista de cursos inscritos por el usuario autenticado.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/Course"
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/courses/enroll": {
+      "post": {
+        "tags": ["Course"],
+        "summary": "Inscribirse en un curso.",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "course_code": { "type": "string" }
+                },
+                "required": ["course_code"]
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Inscripción exitosa.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Course"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/attempts/{courseId}": {
+      "get": {
+        "tags": ["Attempts"],
+        "summary": "Obtener todos los intentos de un usuario para un curso.",
+        "description": "Obtiene todos los intentos de un usuario para un curso a partir de su ID.",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "courseId",
+            "required": true,
+            "schema": { "type": "integer" }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Respuesta con el número de intentos restantes y el máximo permitido.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "remaining": { "type": "integer" },
+                    "max_attempts": { "type": "integer" }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/attempts": {
+      "post": {
+        "tags": ["Attempts"],
+        "summary": "Registrar un intento de juego al iniciar una partida.",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "course_id": { "type": "integer" },
+                  "totalreq": { "type": "integer" }
+                },
+                "required": ["course_id", "totalreq"]
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Intento registrado exitosamente.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "id": { "type": "integer", "description": "Identificador único del intento." }
+                  }
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Error al registrar el intento.",
+            "content": {
+              "application/json": {
+                "schema": { "type": "object", "properties": { "message": { "type": "string" } } }
+              }
+            }
+          }
+        }
+      },
+      "put": {
+        "tags": ["Attempts"],
+        "summary": "Actualizar el estado y las estadisticas de una partida.",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "attemptId": { "type": "integer" },
+                  "status": { "type": "string" },
+                  "score": { "type": "number" },
+                  "movements": { "type": "integer" },
+                  "time": { "type": "string" }
+                },
+                "required": ["attemptId", "status", "score", "movements", "time"]
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Estadisticas y estado actualizados exitosamente.",
+            "content": {
+              "application/json": {
+                "schema": { "type": "object", "properties": { "message": { "type": "string" } } }
+              }
+            }
+          },
+          "500": {
+            "description": "Error al actualizar las estadisticas y el estado del intento.",
+            "content": {
+              "application/json": { "schema": { "type": "object", "properties": { "message": { "type": "string" } } } }
+            }
+          }
+        }
+      }
+    },
+    "/survey": {
+      "get": {
+        "tags": ["Survey"],
+        "summary": "Obtener las preguntas de la encuesta.",
+        "description": "Obtiene las preguntas de la encuesta.",
+        "responses": {
+          "200": { "description": "Preguntas de la encuesta obtenidas exitosamente." }
+        }
+      },
+      "post": {
+        "tags": ["Survey"],
+        "summary": "Guardar las respuestas de la encuesta.",
+        "description": "Guarda las respuestas de la encuesta.",
+        "requestBody": {
+          "content": {
+            "application/json": { 
+              "schema": { 
+                "type": "object", 
+                "properties": { 
+                  "responses": { "type": "array", "items": { "$ref": "#/components/schemas/SurveyResponse" } } 
+                } 
+              } 
+            } 
+          }
+        },
+        "responses": { "200": { "description": "Respuestas de la encuesta guardadas exitosamente." } }
+      }
+    },
+    "/survey/register": {
+      "post": {
+        "tags": ["Survey"],
+        "summary": "Registrar la encuesta.",
+        "description": "Registra la encuesta.",
+        "responses": { "200": { "description": "Encuesta registrada exitosamente." } }
+      }
+    },
+    "/game/content/{courseId}": {
+      "get": {
+        "tags": ["Game"],
+        "summary": "Preparar el contenido del juego.",
+        "description": "Prepara el contenido del juego para un curso a partir de su ID.",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "courseId",
+            "required": true,
+            "schema": { "type": "integer" }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Contenido del juego preparado exitosamente.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/Requirement"
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/student/history": {
+      "get": {
+        "tags": ["Student"],
+        "summary": "Obtener el historial de juegos de un estudiante.",
+        "description": "Obtiene el historial de juegos de un estudiante a partir de su email.",
+        "responses": {
+          "200": {
+            "description": "Historial de juegos obtenido exitosamente.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "type": "object",
+                    "properties": {
+                      "id": {
+                        "type": "integer"
+                      },
+                      "user_id": {
+                        "type": "integer"
+                      },
+                      "course_id": {
+                        "type": "integer"
+                      },
+                      "totalreq": {
+                        "type": "integer"
+                      },
+                      "movements": {
+                        "type": "integer"
+                      },
+                      "score": {
+                        "type": "number"
+                      },
+                      "status": {
+                        "type": "string"
+                      },
+                      "time": {
+                        "type": "string"
+                      },
+                      "created_at": {
+                        "type": "string"
+                      },
+                      "course_name": {
+                        "type": "string"
+                      },
+                      "course_code": {
+                        "type": "string"
+                      },
+                      "max_attempts": {
+                        "type": "integer"
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/seed": {
+      "get": {
+        "tags": ["Database"],
+        "summary": "Ejecutar seed inicial de desarrollo.",
+        "security": [{"basicAuth": []}],
+        "responses": {
+          "200": {
+            "description": "Seed ejecutado con éxito.",
+            "content": {
+              "application/json": {
+                "schema": { "type": "object", "properties": { "message": { "type": "string" } } }
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+}
