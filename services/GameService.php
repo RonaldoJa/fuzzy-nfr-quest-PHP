@@ -1,6 +1,5 @@
 <?php
 require_once 'config/Database.php';
-require_once 'services/CourseService.php';
 require_once 'entities/GameRoomEntity.php';
 require_once 'entities/GameScoreEntity.php';
 require_once 'entities/QuestionEntity.php';
