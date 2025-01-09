@@ -1,0 +1,88 @@
+<!DOCTYPE html>
+<html lang="es">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Restablecer contraseña</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #f4f6f9;
+            margin: 0;
+            padding: 0;
+        }
+
+        .email-container {
+            max-width: 600px;
+            margin: 20px auto;
+            background-color: #ffffff;
+            border-radius: 8px;
+            overflow: hidden;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+        }
+
+        .email-header {
+            background-color: #eef2f7;
+            padding: 20px;
+            text-align: center;
+            font-size: 18px;
+            font-weight: bold;
+            color: #333333;
+        }
+
+        .email-body {
+            padding: 30px;
+            text-align: center;
+        }
+
+        .email-body h1 {
+            font-size: 24px;
+            color: #333333;
+            margin: 0;
+        }
+
+        .email-body p {
+            font-size: 16px;
+            color: #666666;
+            line-height: 1.6;
+            margin: 20px 0;
+        }
+
+        .email-body .code {
+            font-size: 32px;
+            font-weight: bold;
+            color: #333333;
+            margin: 20px 0;
+        }
+
+        .email-footer {
+            background-color: #f4f6f9;
+            text-align: center;
+            padding: 15px;
+            font-size: 12px;
+            color: #999999;
+        }
+    </style>
+</head>
+
+<body>
+    <div class="email-container">
+        <div class="email-header">
+            FRUIT
+        </div>
+        <div class="email-body">
+            <h1>Hola, {{username}}!</h1>
+            <p>Tu código para restablecer tu contraseña es:</p>
+            <p class="code">{{code}}</p>
+            <p>Este código es válido por 10 minutos.</p>
+            <p>Si no solicitaste este código, puedes ignorar este correo.</p>
+            <p>Gracias, FRUIT</p>
+        </div>
+        <div class="email-footer">
+            © {{year}} FRUIT. All rights reserved.
+        </div>
+    </div>
+</body>
+
+</html>

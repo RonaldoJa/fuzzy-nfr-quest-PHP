@@ -1,4 +1,5 @@
 <?php
+date_default_timezone_set('America/Guayaquil');
 require_once 'config/ApiConfig.php';
 ApiConfig::cors();
 ApiConfig::json();
@@ -38,7 +39,7 @@ foreach ($routes as $pattern => $filePath) {
 }
 
 if (!$matched) {
-    $basePath = "api/$uri";
+    $basePath = "$uri";
     $methodFilePath = "$basePath.php";
     $indexFilePath = "$basePath/index.php";
 

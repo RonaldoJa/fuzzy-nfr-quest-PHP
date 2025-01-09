@@ -16,13 +16,47 @@ class UserService
         return $result;
     }
 
-    public static function isAdmin($email)
+    public static function getByRol($role_id)
     {
-        $user = self::getByEmail($email);
+        $query = "SELECT id, name, description FROM roles WHERE id = :role_id";
+        $stmt = Database::getConn()->prepare($query);
+        $stmt->bindParam(':role_id', $role_id);
+        $stmt->execute();
+        $result = $stmt->fetch(PDO::FETCH_ASSOC);
+        if (empty($result)) {
+            return null;
+        }
+        return $result;
+    }
+
+    public static function resetPassword($email, $password)
+    {
+        $query = "UPDATE users SET password = :password, updated_at = now() WHERE email = :email";
+        $stmt = Database::getConn()->prepare($query);
+        $stmt->bindParam(':email', $email);
+        $stmt->bindParam(':password', $password);
+        $stmt->execute();
+
+        return $stmt->rowCount();
+    }
+
+    public static function isTeacher($user_id)
+    {
+        $query = "SELECT r.name from users u inner join roles r on u.role_id  = r.id where u.id = :user_id";
+        $stmt = Database::getConn()->prepare($query);
+        $stmt->bindParam(':user_id', $user_id);
+        $stmt->execute();
+        $result = $stmt->fetch(PDO::FETCH_ASSOC);
+        if (empty($result)) {
+            return null;
+        }
+
+        $user = $result;
+        
         if (is_null($user)) {
             return false;
         }
-        return $user['role'] === 'admin';
+        return $user['name'] === 'Docente';
     }
 
     public static function getInfo($user)
@@ -30,29 +64,9 @@ class UserService
         return [
             'id' => $user['id'],
             'email' => $user['email'],
-            "first_name" => $user['first_name'],
+            "name" => $user['name'],
             "last_name" => $user['last_name'],
-            "role" => $user['role'],
+            "role" => self::getByRol($user["role_id"])
         ];
-    }
-
-    public static function createUser(UserEntity $user)
-    {
-        $query = "INSERT INTO users (first_name, last_name, email, password, role) VALUES (:first_name, :last_name, :email, :password, :role)";
-        $stmt = Database::getConn()->prepare($query);
-        $stmt->bindParam(':first_name', $user->firstName);
-        $stmt->bindParam(':last_name', $user->lastName);
-        $stmt->bindParam(':email', $user->email);
-        $stmt->bindParam(':password', $user->password);
-        $stmt->bindParam(':role', $user->role);
-        $stmt->execute();
-        return Database::getConn()->lastInsertId();
-    }
-
-    public static function deleteAll()
-    {
-        $query = "DELETE FROM users";
-        $stmt = Database::getConn()->prepare($query);
-        $stmt->execute();
     }
 }

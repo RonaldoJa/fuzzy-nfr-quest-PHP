@@ -1,39 +1,122 @@
 <?php
 require_once 'config/Database.php';
 require_once 'services/CourseService.php';
+require_once 'entities/GameRoomEntity.php';
+require_once 'entities/GameScoreEntity.php';
+require_once 'entities/QuestionEntity.php';
 
 class GameService
 {
-    public static function prepareGameContent($courseId)
+    public static function createGameRoom($conn, GameRoomEntity $gameRoom)
     {
-        $course = CourseService::getById($courseId);
+        try {
+            $query = "INSERT INTO game_rooms (code, user_id_created, expiration_date, created_at) VALUES (:code, :user_id_created, :expiration_date, now())";
+            $stmt = $conn->prepare($query);
+            $stmt->bindParam(':code', $gameRoom->code);
+            $stmt->bindParam(':user_id_created', $gameRoom->user_id_created);
+            $stmt->bindParam(':expiration_date', $gameRoom->expiration_date);
 
-        if ($course === null) {
-            http_response_code(404);
-            echo json_encode(['message' => 'Curso no encontrado']);
-            exit;
+            if (!$stmt->execute()) {
+                throw new Exception("Error al crear la sala de juego en la base de datos.");
+            }
+
+            $gameRoomId = Database::getConn()->lastInsertId();
+
+            $query = "SELECT * FROM game_rooms WHERE id = :id";
+            $stmt = $conn->prepare($query);
+            $stmt->bindParam(':id', $gameRoomId);
+            $stmt->execute();
+
+            $gameRoomData = $stmt->fetch(PDO::FETCH_ASSOC);
+
+            if (!$gameRoomData) {
+                throw new Exception("No se pudo obtener la información de la sala recién creada.");
+            }
+
+            return $gameRoomData;
+        } catch (\Throwable $th) {
+            throw new Exception($th->getMessage());
         }
+    }
 
-        $items_per_attempt = $course['items_per_attempt'];
-
-        $sql = "SELECT * FROM requirements WHERE course_id = :course_id ORDER BY RAND() LIMIT $items_per_attempt";
-        $stmt = Database::getConn()->prepare($sql);
-        $stmt->bindParam(':course_id', $course['id']);
+    public static function createQuestions(QuestionEntity $question, $gameRoomId)
+    {
+        $query = "INSERT INTO questions 
+        (game_room_id, nfr, variable, feedback1, value, feedback2, recomend, other_recommended_values, feedback3, validar, created_at)
+        VALUES (:game_room_id, :nfr, :variable, :feedback1, :value, :feedback2, :recomend, :other_recommended_values, :feedback3, :validar, now())";
+        $stmt = Database::getConn()->prepare($query);
+        $stmt->bindParam(':game_room_id', $gameRoomId);
+        $stmt->bindParam(':nfr', $question->nfr);
+        $stmt->bindParam(':variable', $question->variable);
+        $stmt->bindParam(':feedback1', $question->feedback1);
+        $stmt->bindParam(':value', $question->value);
+        $stmt->bindParam(':feedback2', $question->feedback2);
+        $stmt->bindParam(':recomend', $question->recomend);
+        $stmt->bindParam(':other_recommended_values', $question->other_recommended_values);
+        $stmt->bindParam(':feedback3', $question->feedback3);
+        $stmt->bindParam(':validar', $question->validar);
         $stmt->execute();
-        $requirements = $stmt->fetchAll(PDO::FETCH_ASSOC);
+        return Database::getConn()->lastInsertId();
+    }
 
-        $formattedRequirements = [];
+    public static function getGameRoomByCode($code)
+    {
+        $query = "SELECT * FROM game_rooms WHERE code = :code limit 1";
+        $stmt = Database::getConn()->prepare($query);
+        $stmt->bindParam(':code', $code);
+        $stmt->execute();
 
-        foreach ($requirements as $requirement) {
-            $formattedRequirements[] = [
-                'id' => $requirement['id'],
-                'text' => $requirement['requirementText'],
-                'isValid' => $requirement['isValid'] == 1 ? true : false,
-                'feedback' => $requirement['feedbackText'],
-            ];
-        }
+        $gameRoom = $stmt->fetch(PDO::FETCH_ASSOC);
 
-        http_response_code(200);
-        echo json_encode($formattedRequirements);
+        return $gameRoom;
+    }
+
+    public static function getGameScoreByUser($game_room_id, $user_id)
+    {
+        $query = "SELECT * FROM game_score WHERE game_room_id = :game_room_id and user_id = :user_id limit 1";
+        $stmt = Database::getConn()->prepare($query);
+        $stmt->bindParam(':game_room_id', $game_room_id);
+        $stmt->bindParam(':user_id', $user_id);
+        $stmt->execute();
+
+        $gameScore = $stmt->fetch(PDO::FETCH_ASSOC);
+
+        return $gameScore;
+    }
+
+    public static function getGameScoreByGameRoomId($conn, $game_room_id)
+    {
+        $query = "SELECT 
+                        gs.*, 
+                        u.id AS user_id, 
+                        u.name AS name, 
+                        u.last_name AS last_name
+                    FROM 
+                        game_score gs
+                    JOIN 
+                        users u ON gs.user_id = u.id
+                    WHERE 
+                        gs.game_room_id = :game_room_id
+                ";
+        $stmt = $conn->prepare($query);
+        $stmt->bindParam(':game_room_id', $game_room_id);
+        $stmt->execute();
+        $gameScore = $stmt->fetchAll(PDO::FETCH_ASSOC);
+        return $gameScore;
+    }
+
+    public static function createGameScore($conn, GameScoreEntity $gameScore)
+    {
+        $answered_questions = json_encode($gameScore->answered_questions);
+
+        $query = "INSERT INTO game_score (user_id, score, duration, game_room_id, answered_questions, created_at) VALUES (:user_id, :score, :duration, :game_room_id, :answered_questions, now())";
+        $stmt = $conn->prepare($query);
+        $stmt->bindParam(':user_id', $gameScore->user_id);
+        $stmt->bindParam(':score', $gameScore->score);
+        $stmt->bindParam(':duration', $gameScore->duration);
+        $stmt->bindParam(':game_room_id', $gameScore->game_room_id);
+        $stmt->bindParam(':answered_questions', $answered_questions);
+        $stmt->execute();
+        return Database::getConn()->lastInsertId();
     }
 }

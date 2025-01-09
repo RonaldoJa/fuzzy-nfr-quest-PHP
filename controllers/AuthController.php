@@ -2,105 +2,82 @@
 require_once 'services/JWTService.php';
 require_once 'config/Database.php';
 require_once 'services/UserService.php';
+require_once 'helpers/globalHelper.php';
 
 class AuthController
 {
+    public static function getRoles()
+    {
+        try {
+            $query = "select id, name, description from roles where status = 1";
+            $stmt = Database::getConn()->prepare($query);
+            $stmt->execute();
+            $roles = $stmt->fetchAll(PDO::FETCH_ASSOC);
+            return GlobalHelper::generalResponse($roles, 'Proceso exitoso.');
+        } catch (\Throwable $th) {
+            return GlobalHelper::generalResponse(null, $th->getMessage(), 500);
+        }
+    }
 
     public static function register()
     {
-        $data = json_decode(file_get_contents('php://input'), true);
-        $first_name = $data['first_name'] ?? null;
-        $last_name = $data['last_name'] ?? null;
-        $email = $data['email'] ?? null;
-        $comparePassword = $data['password'];
+        try {
+            $data = json_decode(file_get_contents('php://input'), true);
 
-        if (strlen($comparePassword) <= 5) {
-            $response = [
-                'ok' => false,
-                'message' => 'La contraseña debe tener más de 5 caracteres.',
-                'user' => null,
-            ];
+            $name = trim($data['name']) ?? null;
+            $last_name = trim($data['last_name']) ?? null;
+            $username = trim($data['username']) ?? null;
+            $email = trim($data['email']) ?? null;
+            $birth_date = trim($data['birth_date']) ?? null;
+            $password = trim($data['password']) ?? null;
+            $role = trim($data['role']) ?? null;
 
-            http_response_code(400);
-            echo json_encode($response);
-            return;
+
+            if (empty($name) || empty($last_name) || empty($username) || empty($email) || empty($birth_date) || empty($password) || empty($role)) {
+                return GlobalHelper::generalResponse(null, 'Todos los campos son obligatorios y no pueden estar vacíos: nombres, apellidos, correo electrónico, contraseña y rol', 400);
+            }
+
+            if (strlen($password) <= 5) {
+                return GlobalHelper::generalResponse(null, 'La contraseña debe tener más de 5 caracteres.', 400);
+            }
+
+            $passwordHash = password_hash($password, PASSWORD_DEFAULT) ?? null;
+
+            if (!filter_var($email, FILTER_VALIDATE_EMAIL)) {
+                return GlobalHelper::generalResponse(null, 'El correo electrónico no es válido.', 400);
+            }
+
+            $roleExists = UserService::getByRol($role);
+
+            if (!$roleExists) {
+                return GlobalHelper::generalResponse(null, 'El rol ingresado no existe.', 404);
+            }
+
+            $userExists = UserService::getByEmail($email);
+
+            if ($userExists) {
+                return GlobalHelper::generalResponse(null, 'El usuario ingresado ya existe.', 400);
+            }
+
+            $query = "INSERT INTO users (`name`, last_name, username, email, birth_date, `password`, role_id) VALUES (:name, :last_name, :username, :email, :birth_date, :password, :role_id)";
+            $stmt = Database::getConn()->prepare($query);
+            $stmt->bindParam(':name', $name);
+            $stmt->bindParam(':last_name', $last_name);
+            $stmt->bindParam(':username', $username);
+            $stmt->bindParam(':email', $email);
+            $stmt->bindParam(':birth_date', $birth_date);
+            $stmt->bindParam(':password', $passwordHash);
+            $stmt->bindParam(':role_id', $role);
+
+            if ($stmt->execute()) {
+                return GlobalHelper::generalResponse(null, 'Usuario registrado con éxito', 201);
+            } else {
+                return GlobalHelper::generalResponse(null, 'Ocurrio un error al registrar, intente mas tarde.', 500);
+            }
+        } catch (\Throwable $th) {
+
+            return GlobalHelper::generalResponse(null, $th->getMessage(), 500);
         }
-
-        $password = password_hash($data['password'], PASSWORD_DEFAULT) ?? null;
-
-        if (empty($first_name) || empty($last_name) || empty($email) || empty($password)) {
-            $response = [
-                'ok' => false,
-                'message' => 'Todos los campos son obligatorios y no pueden estar vacíos: nombre, apellido, correo electrónico y contraseña.',
-                'user' => null,
-            ];
-
-            http_response_code(400);
-            echo json_encode($response);
-            return;
-        }
-
-
-        if (!filter_var($email, FILTER_VALIDATE_EMAIL)) {
-            $response = [
-                'ok' => false,
-                'message' => 'Formato de correo electrónico no válido.',
-                'user' => null,
-            ];
-
-            http_response_code(400);
-            echo json_encode($response);
-            return;
-        }
-
-        if (strpos($email, '@ug.edu.ec') === false || substr($email, -9) !== 'ug.edu.ec') {
-            $response = [
-                'ok' => false,
-                'message' => 'El correo electrónico debe ser del dominio @ug.edu.ec.',
-                'user' => null,
-            ];
-
-            http_response_code(400);
-            echo json_encode($response);
-            return;
-        }
-
-        $takenUser = UserService::getByEmail($email);
-
-        if ($takenUser) {
-            $response = [
-                'ok' => false,
-                'message' => 'Usuario ya registrado',
-                'user' => null,
-            ];
-
-            http_response_code(409);
-
-            echo json_encode($response);
-            return;
-        }
-
-        $query = "INSERT INTO users (first_name, last_name, email, password) VALUES (:first_name, :last_name, :email, :password)";
-        $stmt = Database::getConn()->prepare($query);
-        $stmt->bindParam(':first_name', $first_name);
-        $stmt->bindParam(':last_name', $last_name);
-        $stmt->bindParam(':email', $email);
-        $stmt->bindParam(':password', $password);
-
-        if ($stmt->execute()) {
-            $user = UserService::getByEmail($email);
-            $response = self::generateLoginResponse($user);
-            http_response_code(201);
-        } else {
-            $response = [
-                'ok' => false,
-                'message' => 'Registro fallido',
-                'user' => null,
-            ];
-            http_response_code(500);
-        }
-
-        echo json_encode($response);
     }
 
     public static function login()
@@ -112,110 +89,24 @@ class AuthController
         $user = UserService::getByEmail($email);
 
         if (!$user) {
-            $response = [
-                'ok' => false,
-                'message' => 'El usuario no existe',
-                'user' => null,
-            ];
-
-            http_response_code(404);
-            echo json_encode($response);
-            return;
+            return GlobalHelper::generalResponse(null, 'Correo electrónico o contraseña no válidos', 401);
         }
 
-        if (!password_verify($password, $user['password'])) {
-            $response = [
-                'ok' => false,
-                'message' => 'Correo electrónico o contraseña no válidos',
-                'user' => null,
-            ];
-
-            http_response_code(401);
-            echo json_encode($response);
-            return;
+        if (!password_verify($password, $user['password']) || !$user) {
+            return GlobalHelper::generalResponse(null, 'Correo electrónico o contraseña no válidos', 401);
         }
 
         $response = self::generateLoginResponse($user);
-
-        http_response_code(200);
-        echo json_encode($response);
-    }
-
-    public static function refreshToken($id, $email)
-    {
-        $user = UserService::getByEmail($email);
-
-        if (!$user) {
-            $response = [
-                'ok' => false,
-                'message' => 'El usuario no existe',
-                'user' => null,
-            ];
-
-            http_response_code(404);
-            echo json_encode($response);
-            return;
-        }
-
-        $response = self::generateLoginResponse($user);
-        http_response_code(200);
-        echo json_encode($response);
+        return GlobalHelper::generalResponse($response, 'Proceso exitoso.');
     }
 
     private static function generateLoginResponse($user)
     {
-        $token = JWTService::generateJWT($user['id'], $user['email']);
+        $token = JWTService::generateJWT($user['id'], $user['email'], $user['name'], $user['last_name']);
 
-        return [
-            'ok' => true,
-            'token' => $token,
+        return  [
+            'access_token' => $token,
             'user' => UserService::getInfo($user),
         ];
-    }
-
-    public static function makeAdmin($email)
-    {
-        $isAdmin = UserService::isAdmin($email);
-
-        if (!$isAdmin) {
-            $response = [
-                'ok' => false,
-                'message' => 'El usuario no es administrador',
-            ];
-
-            http_response_code(400);
-            echo json_encode($response);
-            exit;
-        }
-
-        $data = json_decode(file_get_contents('php://input'), true);
-        $email = $data['email'];
-
-        $user = UserService::getByEmail($email);
-
-        if (!$user) {
-            $response = [
-                'ok' => false,
-                'message' => 'El usuario no existe',
-            ];
-
-            http_response_code(404);
-            echo json_encode($response);
-            exit;
-        }
-
-        $query = "UPDATE users SET role = 'admin' WHERE email = :email";
-        $stmt = Database::getConn()->prepare($query);
-        $stmt->bindParam(':email', $email);
-        $stmt->execute();
-
-        $response = [
-            'ok' => true,
-            'message' => 'Usuario actualizado correctamente',
-        ];
-
-        http_response_code(200);
-        echo json_encode($response);
-        exit;
     }
 }

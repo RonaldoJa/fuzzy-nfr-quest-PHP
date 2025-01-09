@@ -3,6 +3,8 @@ class JWTPayload
 {
     public $id;
     public $email;
+    public $name;
+    public $last_name;
     public $exp;
 }
 
@@ -15,13 +17,15 @@ class JWTService
         return rtrim(strtr(base64_encode($data), '+/', '-_'), '=');
     }
 
-    public static function generateJWT($id, $email)
+    public static function generateJWT($id, $email, $name, $last_name)
     {
         $payload = new JWTPayload();
         $payload->id = $id;
         $payload->email = $email;
+        $payload->name = $name;
+        $payload->last_name = $last_name;
 
-        $payload->exp = time() + (60 * 60); // 1h
+        $payload->exp = time() + (60 * 10080);
 
         $header = json_encode(['alg' => 'HS256', 'typ' => 'JWT']);
         $base64UrlHeader = self::base64UrlEncode($header);
