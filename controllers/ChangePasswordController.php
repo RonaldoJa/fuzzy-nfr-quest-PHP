@@ -2,13 +2,7 @@
 require_once 'services/UserService.php';
 require_once 'services/ChangePasswordService.php';
 require_once 'helpers/globalHelper.php';
-
-require_once 'bookstores/PHPMailer/src/Exception.php';
-require_once 'bookstores/PHPMailer/src/PHPMailer.php';
-require_once 'bookstores/PHPMailer/src/SMTP.php';
-
-use PHPMailer\PHPMailer\PHPMailer;
-use PHPMailer\PHPMailer\Exception;
+require_once 'config/PHPMailerConfig.php';
 
 class ChangePasswordController
 {
@@ -47,21 +41,9 @@ class ChangePasswordController
             $htmlTemplate = str_replace('{{code}}', $code, $htmlTemplate);
             $htmlTemplate = str_replace('{{year}}', $year, $htmlTemplate);
 
-            $mail = new PHPMailer();
-            $mail->isSMTP();
-            $mail->Host = 'smtp.gmail.com';
-            $mail->Port = 587;
-            $mail->SMTPSecure = "tls";
-            $mail->SMTPAuth = true;
-            $mail->SMTPDebug = 0;
-            $mail->Username = 'fuzzynfrquest@gmail.com';
-            $mail->Password = 'xvifaeltpyidsqnf';
-            $mail->setFrom('fuzzynfrquest@gmail.com', 'FRUIT');
-            $mail->addAddress($email);
-            $mail->isHTML(true);
-            $mail->Subject = 'Tu código para restablecer la contraseña';
-            $mail->Body = $htmlTemplate;
-            $mail->CharSet = 'UTF-8';
+            $send = new SendEmailEntity($email, 'Tu código para restablecer la contraseña', $htmlTemplate);
+
+            $mail = PHPMailerConfig::sendEmail($send);
 
             if (!$mail->send()) {
                 return GlobalHelper::generalResponse(null, 'El correo electrónico no pudo ser enviado.', 500);
