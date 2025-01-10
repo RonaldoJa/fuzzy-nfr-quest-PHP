@@ -10,7 +10,19 @@ class JWTPayload
 
 class JWTService
 {
-    private static $secretKey = '8f890bf03eea60ae2c136b6e3b22afd6480ae5711635038dfe6de4646592a16d';
+    private static $secretKey;
+    private static $ttl;
+
+    public static function initialize()
+    {
+        if (empty(self::$secretKey)) {
+            self::$secretKey = getenv('JWT_SECRET');
+        }
+
+        if (empty(self::$ttl)) {
+            self::$ttl = intval(getenv('JWT_TTL') ?: 60);
+        }
+    }
 
     public static function base64UrlEncode($data)
     {
@@ -19,13 +31,15 @@ class JWTService
 
     public static function generateJWT($id, $email, $name, $last_name)
     {
+        self::initialize();
+
         $payload = new JWTPayload();
         $payload->id = $id;
         $payload->email = $email;
         $payload->name = $name;
         $payload->last_name = $last_name;
 
-        $payload->exp = time() + (60 * 10080);
+        $payload->exp = time() + (60 * self::$ttl);
 
         $header = json_encode(['alg' => 'HS256', 'typ' => 'JWT']);
         $base64UrlHeader = self::base64UrlEncode($header);
@@ -38,6 +52,8 @@ class JWTService
 
     public static function verifyJWT($jwt)
     {
+        self::initialize();
+
         list($header, $payload, $signature) = explode('.', $jwt);
         $validSignature = self::base64UrlEncode(hash_hmac('sha256', $header . "." . $payload, self::$secretKey, true));
 
