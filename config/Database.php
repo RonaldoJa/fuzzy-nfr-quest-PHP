@@ -36,7 +36,9 @@ class Database {
                 );
                 self::$conn->exec("set names utf8");
             } catch (PDOException $exception) {
-                echo "Connection error: " . $exception->getMessage();
+                throw new Exception("Connection error: " . $exception->getMessage());
+                //return $exception;
+                //echo "Connection error: " . $exception->getMessage();
             }
         }
         return self::$conn;

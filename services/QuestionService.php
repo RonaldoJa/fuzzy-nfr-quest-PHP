@@ -1,11 +1,13 @@
 <?php
 
+
 require_once 'config/Database.php';
 require_once 'entities/GameRoomEntity.php';
 require_once 'entities/QuestionEntity.php';
 
-class QuestionService{
 
+class QuestionService
+{
     public static function getQuestionsbyGameRoomId($gameRoomId)
     {
         $query = "SELECT id, nfr, other_recommended_values FROM questions WHERE game_room_id = :game_room_id AND game_room_id is not null";
