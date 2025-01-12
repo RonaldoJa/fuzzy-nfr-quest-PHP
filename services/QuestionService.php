@@ -18,6 +18,16 @@ class QuestionService
         return $questions;
     }
 
+    public static function getInfoAllCode($gameRoomId)
+    {
+        $query = "SELECT id, nfr, variable, 'feedback1', 'value', 'feedback2', 'recomend', 'feedback3', 'validar' FROM questions WHERE game_room_id = :game_room_id AND game_room_id is not null";
+        $stmt = Database::getConn()->prepare($query);
+        $stmt->bindParam(':game_room_id', $gameRoomId);
+        $stmt->execute();
+        $questions = $stmt->fetchAll(PDO::FETCH_ASSOC);
+        return $questions;
+    }
+
     public static function find($conn, $question_id)
     {
         $query = "SELECT * FROM questions WHERE id = :question_id limit 1";
