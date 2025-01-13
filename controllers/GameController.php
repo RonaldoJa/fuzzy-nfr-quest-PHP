@@ -78,6 +78,39 @@ class GameController
         }
     }
 
+    public static function deleteRoomForStatus($user_id)
+    {
+        try {
+
+            // if (empty($gameRoomId) || empty($status)) {
+            //     return GlobalHelper::generalResponse(null, 'Los campos game_room_id y status son obligatorios. ', 400);
+            // }
+
+            $conn = Database::getConn();
+            $isTeacher = UserService::isTeacher($user_id);
+
+            if (!$isTeacher) {
+                return GlobalHelper::generalResponse(null, 'Acceso denegado. Solo los docentes pueden crear salas de juegos.', 403);
+            }
+
+            $conn->beginTransaction();
+
+            $data = json_decode(file_get_contents('php://input'), true);
+
+            $gameRoomId = $data['game_room_id'] ?? null;
+            $status = $data['status'] ?? null;
+            
+            $gameRoom = GameService::deleteRoomStatus($conn, $gameRoomId, $status);
+
+
+            $conn->commit();
+
+            return GlobalHelper::generalResponse(null, 'Proceso exitoso.');
+        } catch (\Throwable $th) {
+            return GlobalHelper::generalResponse(null, $th->getMessage(), 500);
+        }
+    }
+
     public static function createRoomGameQuestions($user_id)
     {
         try {

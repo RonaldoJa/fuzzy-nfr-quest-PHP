@@ -6,6 +6,30 @@ require_once 'entities/QuestionEntity.php';
 
 class GameService
 {
+
+    public static function deleteRoomStatus($conn, $game_room_id, $status)
+    {
+        $query = "SELECT id FROM game_rooms WHERE id = :id";
+        $stmt = $conn->prepare($query);
+        $stmt->bindParam(':id', $game_room_id);
+        $stmt->execute();
+
+        $gameRoomData = $stmt->fetch(PDO::FETCH_ASSOC);
+
+        if (!$gameRoomData) {
+            throw new Exception("No se pudo obtener la información de la sala recién creada.");
+        }
+
+
+        $query = "UPDATE game_rooms SET status = :status WHERE id = :game_room_id";
+        $stmt = $conn->prepare($query);
+        $stmt->bindParam(':game_room_id', $game_room_id);
+        $stmt->bindParam(':status', $status);
+        $stmt->execute();
+    }
+
+
+
     public static function createGameRoom($conn, GameRoomEntity $gameRoom)
     {
         try {
