@@ -3,7 +3,7 @@
 
 <head>
     <meta charset="UTF-8">
-    <title>Reporte Académico</title>
+    <title>{{title}}</title>
     <style>
         body {
             font-family: Arial, sans-serif;
@@ -89,25 +89,25 @@
 <body>
     <div class="header">
         <div class="header-logo">
-            <img src="{{imagen}}" alt="Fuzzy NFR Quest">
+            <img src="{{imagen}}" alt="FRUIT">
         </div>
-        <h1>Reporte Académico</h1>
+        <h1>{{title}}</h1>
     </div>
     <div class="footer">
-        <p>Reporte generado por el sistema Fuzzy NFR Quest. © {{year}}</p>
+        <p>{{footer}}FRUIT. © {{year}}</p>
     </div>
 
-    <p><strong>Fecha de generación: </strong>{{generated_at}}</p>
-    <p><strong>Docente: </strong>{{fullNameTeacher}}</p>
-    <p><strong>Sala: </strong>{{code}}</p>
+    <p><strong>{{generation_date}}</strong>{{generated_at}}</p>
+    <p><strong>{{teacher_title}}</strong>{{fullNameTeacher}}</p>
+    <p><strong>{{code_title}}</strong>{{code}}</p>
 
-    <h2>Resumen General</h2>
+    <h2>{{subtitle_1}}</h2>
     <table>
         <tr>
-            <th>Total de RNF</th>
-            <th>Promedio</th>
-            <th>Puntaje Más Alto</th>
-            <th>Estudiante con el Puntaje Más Alto</th>
+            <th>{{table_general_item1}}</th>
+            <th>{{table_general_item2}}</th>
+            <th>{{table_general_item3}}</th>
+            <th>{{table_general_item4}}</th>
         </tr>
         <tr>
             <td>{{total_questions}}</td>
@@ -117,19 +117,19 @@
         </tr>
     </table>
 
-    <h2>Detalle por Estudiante</h2>
+    <h2>{{subtitle_2}}</h2>
     <table>
         <thead>
             <tr>
                 <th>ID</th>
-                <th>Apellidos</th>
-                <th>Nombres</th>
-                <th>Aciertos</th>
-                <th>Desaciertos</th>
+                <th>{{table_student_item1}}</th>
+                <th>{{table_student_item2}}</th>
+                <th>{{table_student_item3}}</th>
+                <th>{{table_student_item4}}</th>
                 <th>Total</th>
-                <th>Puntaje</th>
-                <th>Duración</th>
-                <th>Fecha Registro</th>
+                <th>{{table_student_item5}}</th>
+                <th>{{table_student_item6}}</th>
+                <th>{{table_student_item7}}</th>
             </tr>
         </thead>
         <tbody>
