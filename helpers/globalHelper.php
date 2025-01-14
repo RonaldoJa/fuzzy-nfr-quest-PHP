@@ -32,13 +32,18 @@ class GlobalHelper
 
     public static function isValidDate($date) {
         $format = 'Y-m-d H:i:s';
+    
         $dateObj = DateTime::createFromFormat($format, $date);
-        
-        if ($dateObj && $dateObj->format($format) === $date) {
-            return true;
+    
+        if (!$dateObj) {
+            $normalizedDate = preg_replace_callback('/\b\d\b/', function ($matches) {
+                return str_pad($matches[0], 2, '0', STR_PAD_LEFT);
+            }, $date);
+    
+            $dateObj = DateTime::createFromFormat($format, $normalizedDate);
         }
-
-        return false;
+    
+        return $dateObj && $dateObj->format($format) === $dateObj->format($format);
     }
 
     public static function validateArrayFields($array) {
