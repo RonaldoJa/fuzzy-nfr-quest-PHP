@@ -53,7 +53,7 @@ class QuestionService
             $expiration_date = date('Y-m-d H:i:s', strtotime('+7 days'));
 
             // Insertar en game_rooms
-            $queryGameRoom = "INSERT INTO game_rooms (code, user_id_created, expiration_date) VALUES (:code, :user_id_created, :expiration_date)";
+            $queryGameRoom = "INSERT INTO game_rooms (code, user_id_created, created_at, expiration_date) VALUES (:code, :user_id_created, now(), :expiration_date)";
             $stmtGameRoom = Database::getConn()->prepare($queryGameRoom);
             
             // Sanitizar los datos antes de la inserción
