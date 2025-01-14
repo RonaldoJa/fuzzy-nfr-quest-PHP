@@ -37,7 +37,8 @@ class QuizController
                     return GlobalHelper::generalResponse(null, 'Pregunta no encontrada', 404);
                 }
 
-                $weights = explode('/', $question['validar']);
+                $replace_validar = str_replace(',', '.', $question['validar']);
+                $weights = explode('/', $replace_validar);
 
                 $weightVariable = isset($weights[0]) ? floatval($weights[0]) : 0;
                 $weightValue = isset($weights[1]) ? floatval($weights[1]) : 0;
