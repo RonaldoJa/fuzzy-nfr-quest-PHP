@@ -3,6 +3,7 @@ require_once 'services/JWTService.php';
 require_once 'config/Database.php';
 require_once 'services/UserService.php';
 require_once 'helpers/globalHelper.php';
+require_once 'helpers/messages.php';
 
 class AuthController
 {
@@ -32,6 +33,8 @@ class AuthController
             $password = trim($data['password']) ?? null;
             $role = trim($data['role']) ?? null;
 
+            $language = isset($data['language']) ? trim($data['language']) : 'es';
+
 
             if (empty($name) || empty($last_name) || empty($username) || empty($email) || empty($birth_date) || empty($password) || empty($role)) {
                 return GlobalHelper::generalResponse(null, 'Todos los campos son obligatorios y no pueden estar vacíos: nombres, apellidos, correo electrónico, contraseña y rol', 400);
@@ -56,7 +59,7 @@ class AuthController
             $userExists = UserService::getByEmail($email);
 
             if ($userExists) {
-                return GlobalHelper::generalResponse(null, 'El usuario ingresado ya existe.', 400);
+                return GlobalHelper::generalResponse(null, Messages::$authMessages[$language]["user.exists"], 400);
             }
 
             $query = "INSERT INTO users (`name`, last_name, username, email, birth_date, `password`, role_id) VALUES (:name, :last_name, :username, :email, :birth_date, :password, :role_id)";
@@ -70,7 +73,7 @@ class AuthController
             $stmt->bindParam(':role_id', $role);
 
             if ($stmt->execute()) {
-                return GlobalHelper::generalResponse(null, 'Usuario registrado con éxito', 201);
+                return GlobalHelper::generalResponse(null, Messages::$authMessages[$language]["user.created"], 201);
             } else {
                 return GlobalHelper::generalResponse(null, 'Ocurrio un error al registrar, intente mas tarde.', 500);
             }
@@ -86,14 +89,16 @@ class AuthController
         $email = $data['email'];
         $password = $data['password'];
 
+        $language = isset($data['language']) ? trim($data['language']) : 'es';
+
         $user = UserService::getByEmail($email);
 
         if (!$user) {
-            return GlobalHelper::generalResponse(null, 'Correo electrónico o contraseña no válidos', 401);
+            return GlobalHelper::generalResponse(null, Messages::$authMessages["$language"]["invalid.credentials"], 401);
         }
 
         if (!password_verify($password, $user['password']) || !$user) {
-            return GlobalHelper::generalResponse(null, 'Correo electrónico o contraseña no válidos', 401);
+            return GlobalHelper::generalResponse(null, Messages::$authMessages["$language"]["invalid.credentials"], 401);
         }
 
         $response = self::generateLoginResponse($user);

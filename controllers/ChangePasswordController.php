@@ -3,6 +3,7 @@ require_once 'services/UserService.php';
 require_once 'services/ChangePasswordService.php';
 require_once 'helpers/globalHelper.php';
 require_once 'config/PHPMailerConfig.php';
+require_once 'helpers/messages.php';
 
 class ChangePasswordController
 {
@@ -10,6 +11,8 @@ class ChangePasswordController
     {
         try {
             $data = json_decode(file_get_contents('php://input'), true);
+
+            $language = isset($data['language']) ? trim($data['language']) : 'es';
 
             $email = trim($data['email']) ?? null;
 
@@ -24,7 +27,7 @@ class ChangePasswordController
             $user = UserService::getByEmail($email);
 
             if (!$user) {
-                return GlobalHelper::generalResponse(null, 'El usuario no se encuentra registrado.', 404);
+                return GlobalHelper::generalResponse(null, Messages::$changePasswordMessages[$language]["user.not.found"], 404);
             }
 
             $code = rand(100000, 999999);
@@ -46,9 +49,9 @@ class ChangePasswordController
             $mail = PHPMailerConfig::sendEmail($send);
 
             if (!$mail->send()) {
-                return GlobalHelper::generalResponse(null, 'El correo electrónico no pudo ser enviado.', 500);
+                return GlobalHelper::generalResponse(null, Messages::$changePasswordMessages[$language]["email.not.send"], 500);
             } else {
-                return GlobalHelper::generalResponse(null, 'Tu código ha sido enviado a tu correo electrónico. Por favor, verifica tu bandeja de entrada.', 200);
+                return GlobalHelper::generalResponse(null, Messages::$changePasswordMessages[$language]["email.send"], 200);
             }
         } catch (\Throwable $th) {
             return GlobalHelper::generalResponse(null, $th->getMessage(), 500);
@@ -65,6 +68,8 @@ class ChangePasswordController
             $password = trim($data['password']) ?? null;
             $password_confirmation = trim($data['password_confirmation']) ?? null;
 
+            $language = isset($data['language']) ? trim($data['language']) : 'es';
+
             if (empty($email) || empty($code) || empty($password) || empty($password_confirmation)) {
                 return GlobalHelper::generalResponse(null, 'Todos los campos son obligatorios y no pueden estar vacíos.', 400);
             }
@@ -80,17 +85,17 @@ class ChangePasswordController
             $user = UserService::getByEmail($email);
 
             if (!$user) {
-                return GlobalHelper::generalResponse(null, 'El usuario no se encuentra registrado.', 404);
+                return GlobalHelper::generalResponse(null, Messages::$changePasswordMessages[$language]["user.not.found"], 404);
             }
 
             $resetPassword   = ChangePasswordService::getPasswordResetCode($email, $code);
 
             if (!$resetPassword) {
-                return GlobalHelper::generalResponse(null, 'El código ingresado no es valido.', 400);
+                return GlobalHelper::generalResponse(null, Messages::$changePasswordMessages[$language]["code.invalid"], 400);
             }
 
             if ($resetPassword['expires_at'] < date('Y-m-d H:i:s')) {
-                return GlobalHelper::generalResponse(null, 'El código ingresado ha expirado.', 400);
+                return GlobalHelper::generalResponse(null, Messages::$changePasswordMessages[$language]["code.expired"], 400);
             }
 
             $passwordHash = password_hash($password, PASSWORD_DEFAULT) ?? null;
@@ -98,7 +103,7 @@ class ChangePasswordController
             $resetPassword = UserService::resetPassword($email, $passwordHash);
 
             if ($resetPassword == 0) {
-                return GlobalHelper::generalResponse(null, 'No se pudo restablecer la contraseña, intente de nuevo.', 500);
+                return GlobalHelper::generalResponse(null, Messages::$changePasswordMessages[$language]["error.reset.password"], 500);
             }
 
             try {
@@ -106,7 +111,7 @@ class ChangePasswordController
             } catch (\Throwable $th) {
             }
 
-            return GlobalHelper::generalResponse(null, 'La contraseña ha sido restablecida correctamente.', 200);
+            return GlobalHelper::generalResponse(null, Messages::$changePasswordMessages[$language]["success.reset.password"], 200);
         } catch (\Throwable $th) {
             return GlobalHelper::generalResponse(null, $th->getMessage(), 500);
         }

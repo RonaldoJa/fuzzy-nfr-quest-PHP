@@ -4,6 +4,7 @@ require_once 'services/GameService.php';
 require_once 'services/UserService.php';
 require_once 'entities/GameRoomEntity.php';
 require_once 'config/Database.php';
+require_once 'helpers/messages.php';
 
 class GameController
 {
@@ -100,12 +101,14 @@ class GameController
             $gameRoomId = $data['game_room_id'] ?? null;
             $status = $data['status'] ?? null;
 
+            $language = isset($data['language']) ? trim($data['language']) : 'es';
+
             $gameRoom = GameService::deleteRoomStatus($conn, $gameRoomId, $status);
 
 
             $conn->commit();
 
-            return GlobalHelper::generalResponse(null, 'Proceso exitoso.');
+            return GlobalHelper::generalResponse(null, Messages::$gameRoomMessages[$language]["game.room.change.status"]);
         } catch (\Throwable $th) {
             return GlobalHelper::generalResponse(null, $th->getMessage(), 500);
         }
@@ -127,6 +130,8 @@ class GameController
 
             $expiration_date = trim($data['expiration_date']) ?? null;
             $questions = $data['questions'] ?? null;
+
+            $language = isset($data['language']) ? trim($data['language']) : 'es';
 
 
             if (empty($expiration_date) || empty($questions)) {
@@ -155,9 +160,15 @@ class GameController
 
             $conn->commit();
 
-            return GlobalHelper::generalResponse(null, 'La sala de juegos se ha creado correctamente, ' .
-                'Por favor comparte este código <strong>' . $gameRoom['code'] . '</strong> con tus estudiantes, ' .
-                'Recuerda que esta sala expira el <strong>' . $gameRoom['expiration_date'] . '</strong>.');
+            if($language == 'es'){
+                return GlobalHelper::generalResponse(null, 'La sala de juegos se ha creado correctamente, ' .
+                    'Por favor comparte este código <strong>' . $gameRoom['code'] . '</strong> con tus estudiantes, ' .
+                    'Recuerda que esta sala expira el <strong>' . $gameRoom['expiration_date'] . '</strong>.');
+            }else{
+                return GlobalHelper::generalResponse(null, 'The game room has been created successfully, ' .
+                    'Please share this code <strong>' . $gameRoom['code'] . '</strong> with your students, ' .
+                    'Remember that this room expires on <strong>' . $gameRoom['expiration_date'] . '</strong>.');
+            }
         } catch (\Throwable $th) {
             if (isset($conn)) {
                 $conn->rollBack();
@@ -223,6 +234,8 @@ class GameController
             $questions = $data['questions'] ?? null;
             $questionId = $data['questionId'] ?? null;
 
+            $language = isset($data['language']) ? trim($data['language']) : 'es';
+
             if (empty($questions) || !is_array($questions)) {
                 return GlobalHelper::generalResponse(null, 'Se requiere un array de preguntas.', 400);
             }
@@ -251,7 +264,7 @@ class GameController
             }
 
             $conn->commit();
-            return GlobalHelper::generalResponse(null, 'Las preguntas se han actualizado correctamente.');
+            return GlobalHelper::generalResponse(null, Messages::$gameRoomMessages[$language]["questions.update"]);
         } catch (\Throwable $th) {
             if (isset($conn)) {
                 $conn->rollBack();
@@ -268,6 +281,8 @@ class GameController
             $gameRoomId = $data['gameRoomId'] ?? null;
             $expirationDate = $data['expirationDate'] ?? null;
 
+            $language = isset($data['language']) ? trim($data['language']) : 'es';
+
             if (empty($gameRoomId) || empty($expirationDate)) {
                 return GlobalHelper::generalResponse(null, 'Los campos gameRoomId y expirationDate son obligatorios.', 400);
             }
@@ -278,7 +293,7 @@ class GameController
 
             $gameRoom = GameService::editGameRoom($expirationDate, $gameRoomId);
 
-            return GlobalHelper::generalResponse($gameRoom, 'La fecha de expiración de la sala de juego se ha actualizado correctamente.');
+            return GlobalHelper::generalResponse($gameRoom, Messages::$gameRoomMessages[$language]["game.room.update.ending.date"]);
         } catch (\Throwable $th) {
             return GlobalHelper::generalResponse(null, $th->getMessage(), 500);
         }
