@@ -99,7 +99,7 @@ class GameController
 
             $gameRoomId = $data['game_room_id'] ?? null;
             $status = $data['status'] ?? null;
-            
+
             $gameRoom = GameService::deleteRoomStatus($conn, $gameRoomId, $status);
 
 
@@ -256,6 +256,30 @@ class GameController
             if (isset($conn)) {
                 $conn->rollBack();
             }
+            return GlobalHelper::generalResponse(null, $th->getMessage(), 500);
+        }
+    }
+
+    public static function editGameRoom()
+    {
+        try {
+            $data = json_decode(file_get_contents('php://input'), true);
+
+            $gameRoomId = $data['gameRoomId'] ?? null;
+            $expirationDate = $data['expirationDate'] ?? null;
+
+            if (empty($gameRoomId) || empty($expirationDate)) {
+                return GlobalHelper::generalResponse(null, 'Los campos gameRoomId y expirationDate son obligatorios.', 400);
+            }
+
+            if (!GlobalHelper::isValidDate($expirationDate)) {
+                return GlobalHelper::generalResponse(null, 'La fecha de expiración no es válida.', 400);
+            }
+
+            $gameRoom = GameService::editGameRoom($expirationDate, $gameRoomId);
+
+            return GlobalHelper::generalResponse($gameRoom, 'La fecha de expiración de la sala de juego se ha actualizado correctamente.');
+        } catch (\Throwable $th) {
             return GlobalHelper::generalResponse(null, $th->getMessage(), 500);
         }
     }

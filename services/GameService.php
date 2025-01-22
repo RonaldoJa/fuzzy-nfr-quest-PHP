@@ -155,15 +155,14 @@ class GameService
         return Database::getConn()->lastInsertId();
     }
 
-    public static function editGameRoom(GameRoomEntity $gameRoom)
+    public static function editGameRoom($expiration_date, $game_room_id)
     {
-        $query = "UPDATE game_rooms SET code = :code, user_id_created = :user_id_created, expiration_date = :expiration_date WHERE id = :id";
+        $query = "UPDATE game_rooms SET expiration_date = :expiration_date, updated_at = now() WHERE id = :id";
         $stmt = Database::getConn()->prepare($query);
-        $stmt->bindParam(':id', $gameRoom->id);
-        $stmt->bindParam(':code', $gameRoom->code);
-        $stmt->bindParam(':user_id_created', $gameRoom->user_id_created);
-        $stmt->bindParam(':expiration_date', $gameRoom->expiration_date);
+        $stmt->bindParam(':id', $game_room_id);
+        $stmt->bindParam(':expiration_date', $expiration_date);
         $stmt->execute();
+        return $stmt->rowCount();
     }
 
     public static function editQuestionRoom(QuestionEntity $question, $questionId)

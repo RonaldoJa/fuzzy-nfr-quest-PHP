@@ -115,15 +115,9 @@ class QuestionsController
             }
 
             $gameRoomExists = GameService::getGameRoomById($room_id);
-
+          
             if (!$gameRoomExists) {
-                return GlobalHelper::generalResponse(null, 'La sala de juego que estás buscando no existe. Verifica el código e inténtalo nuevamente.', 404);
-            }
-
-                
-
-            if ($gameRoomExists['expiration_date'] < date('Y-m-d H:i:s')) {
-                return GlobalHelper::generalResponse(null, 'Esta sala de juego ya no está disponible porque ha expirado. Por favor, verifique con el docente o inicie una nueva sala', 403);
+                return GlobalHelper::generalResponse(null, 'La sala de juego que estás buscando no existe. Verifica el id e inténtalo nuevamente.', 404);
             }
 
             $questions = QuestionService::findForRoom($gameRoomExists['id']);
