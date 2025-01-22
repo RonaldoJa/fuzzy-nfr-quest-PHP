@@ -182,4 +182,19 @@ class GameService
         $stmt->execute();
     }
 
+    public static function getParticipatingPlayersByGameRoom($game_room_id)
+    {
+        $query = "SELECT gs.id, gr.code, gs.score, CONCAT(u.last_name,' ',u.name) AS 'FullNames', gs.duration, gs.answered_questions 
+            FROM game_score gs 
+            INNER JOIN game_rooms gr ON gs.game_room_id = gr.id 
+            INNER JOIN users u ON gs.user_id = u.id WHERE gs.game_room_id = :game_room_id
+        ";
+
+        $stmt = Database::getConn()->prepare($query);
+        $stmt->bindParam(':game_room_id', $game_room_id);
+        $stmt->execute();
+        $data = $stmt->fetchAll(PDO::FETCH_ASSOC);
+        return $data;
+    }
+
 }

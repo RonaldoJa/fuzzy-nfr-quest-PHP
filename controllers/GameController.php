@@ -298,4 +298,36 @@ class GameController
             return GlobalHelper::generalResponse(null, $th->getMessage(), 500);
         }
     }
+
+    public static function getParticipatingPlayersByGameRoom(){
+        try {
+            $data = json_decode(file_get_contents('php://input'), true);
+
+            $gameRoomId = $data['gameRoomId'] ?? null;
+
+            $language = isset($data['language']) ? trim($data['language']) : 'es';
+
+            if (empty($gameRoomId)) {
+                return GlobalHelper::generalResponse(null, 'El campo gameRoomId es obligatorio.', 400);
+            }
+
+            $participatingPlayers = GameService::getParticipatingPlayersByGameRoom($gameRoomId);
+
+            $formattedData = [];
+            foreach ($participatingPlayers as $row) {
+                $formattedData[] = [
+                    "id" => $row['id'],
+                    "code" => $row['code'],
+                    "score" => $row['score'],
+                    'fullNames' => $row['FullNames'],
+                    "answered_questions" => json_decode($row['answered_questions'], true),
+                    "duration" => $row['duration'],
+                ];
+            }
+
+            return GlobalHelper::generalResponse($formattedData,'Proceso exitoso.');
+        } catch (\Throwable $th) {
+            return GlobalHelper::generalResponse(null, $th->getMessage(), 500);
+        }
+    }
 }
