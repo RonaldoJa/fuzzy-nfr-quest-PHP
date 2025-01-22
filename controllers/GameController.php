@@ -165,4 +165,98 @@ class GameController
             return GlobalHelper::generalResponse(null, $th->getMessage(), 500);
         }
     }
+
+    // public static function editRoomGameQuestions($user_id)
+    // {
+    //     try {
+    //         $conn = Database::getConn();
+    //         $isTeacher = UserService::isTeacher($user_id);
+
+    //         if (!$isTeacher) {
+    //             return GlobalHelper::generalResponse(null, 'Acceso denegado. Solo los docentes pueden crear salas de juegos.', 403);
+    //         }
+
+    //         $conn->beginTransaction();
+
+    //         $data = json_decode(file_get_contents('php://input'), true);
+
+    //         $gameRoomId = $data['game_room_id'] ?? null;
+    //         $questions = $data['questions'] ?? null;
+
+    //         if (empty($gameRoomId) || empty($questions)) {
+    //             return GlobalHelper::generalResponse(null, 'Los campos game_room_id y questions son obligatorios. ', 400);
+    //         }
+
+    //         if (!GlobalHelper::validateArrayFields($questions)) {
+    //             return GlobalHelper::generalResponse(null, 'Por favor revisa los campos dentro del array questions que esten todo completos.', 400);
+    //         }
+
+    //         foreach ($questions as $questionData) {
+    //             $question = new QuestionEntity(trim($questionData['nfr']), trim($questionData['variable']), trim($questionData['feedback1']), trim($questionData['value']), trim($questionData['feedback2']), trim($questionData['recomend']), trim($questionData['other_recommended_values']), trim($questionData['feedback3']), trim($questionData['validar']));
+    //             GameService::editGameRoom($question, $gameRoomId);
+    //         }
+
+    //         $conn->commit();
+
+    //         return GlobalHelper::generalResponse(null, 'Las preguntas de la sala de juegos se han actualizado correctamente.');
+    //     } catch (\Throwable $th) {
+    //         if (isset($conn)) {
+    //             $conn->rollBack();
+    //         }
+    //         return GlobalHelper::generalResponse(null, $th->getMessage(), 500);
+    //     }
+    // }
+
+    public static function editQuestionRooms($user_id)
+    {
+        try {
+            $conn = Database::getConn();
+            $isTeacher = UserService::isTeacher($user_id);
+
+            if (!$isTeacher) {
+                return GlobalHelper::generalResponse(null, 'Acceso denegado. Solo los docentes pueden crear salas de juegos.', 403);
+            }
+
+            $conn->beginTransaction();
+
+            $data = json_decode(file_get_contents('php://input'), true);
+            $questions = $data['questions'] ?? null;
+            $questionId = $data['questionId'] ?? null;
+
+            if (empty($questions) || !is_array($questions)) {
+                return GlobalHelper::generalResponse(null, 'Se requiere un array de preguntas.', 400);
+            }
+
+            if (empty($questionId)) {
+                return GlobalHelper::generalResponse(null, 'Se requiere un questionId.', 400);
+            }
+
+            foreach ($questions as $questionData) {
+                if (empty($questionData)) {
+                    return GlobalHelper::generalResponse(null, 'Cada pregunta debe tener sus campos completos', 400);
+                }
+
+                $questionEntity = new QuestionEntity(
+                    trim($questionData['nfr']),
+                    trim($questionData['variable']),
+                    trim($questionData['feedback1']),
+                    trim($questionData['value']),
+                    trim($questionData['feedback2']),
+                    trim($questionData['recomend']),
+                    trim($questionData['other_recommended_values']),
+                    trim($questionData['feedback3']),
+                    trim($questionData['validar'])
+                );
+                GameService::editQuestionRoom($questionEntity, $questionId);
+            }
+
+            $conn->commit();
+            return GlobalHelper::generalResponse(null, 'Las preguntas se han actualizado correctamente.');
+        } catch (\Throwable $th) {
+            if (isset($conn)) {
+                $conn->rollBack();
+            }
+            return GlobalHelper::generalResponse(null, $th->getMessage(), 500);
+        }
+    }
 }

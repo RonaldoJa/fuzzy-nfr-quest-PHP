@@ -101,4 +101,85 @@ class QuestionsController
             return GlobalHelper::generalResponse(null, $th->getMessage(), 500);
         }
     }
+
+    public static function getQuestionForRoomId($user_id)
+    {
+        try {
+            $data = json_decode(file_get_contents('php://input'), true);
+
+            $room_id = trim($data['room_id']) ?? null;
+            $userId = $user_id;
+
+            if (empty($room_id)) {
+                return GlobalHelper::generalResponse(null, 'El campo room_id es obligatorio.', 400);
+            }
+
+            $gameRoomExists = GameService::getGameRoomById($room_id);
+
+            if (!$gameRoomExists) {
+                return GlobalHelper::generalResponse(null, 'La sala de juego que estás buscando no existe. Verifica el código e inténtalo nuevamente.', 404);
+            }
+
+                
+
+            if ($gameRoomExists['expiration_date'] < date('Y-m-d H:i:s')) {
+                return GlobalHelper::generalResponse(null, 'Esta sala de juego ya no está disponible porque ha expirado. Por favor, verifique con el docente o inicie una nueva sala', 403);
+            }
+
+            $questions = QuestionService::findForRoom($gameRoomExists['id']);
+
+            $data = [
+                'game_room_id' => $gameRoomExists['id'],
+                'questions' => $questions,
+                'message' => 'Requerimientos no funcionales encontrados.',
+            ];
+
+            http_response_code(200);
+            echo json_encode($data);
+            return;
+        } catch (\Throwable $th) {
+            return GlobalHelper::generalResponse(null, $th->getMessage(), 500);
+        }
+    }
+
+    public static function getQuestionForRoomIdAndQuestionId($user_id)
+    {
+        try {
+            $data = json_decode(file_get_contents('php://input'), true);
+
+            $room_id = trim($data['room_id']) ?? null;
+            $question_id = trim($data['question_id']) ?? null;
+            $userId = $user_id;
+
+            if (empty($room_id)) {
+                return GlobalHelper::generalResponse(null, 'El campo room_id es obligatorio.', 400);
+            }
+
+            $gameRoomExists = GameService::getGameRoomById($room_id);
+
+            if (!$gameRoomExists) {
+                return GlobalHelper::generalResponse(null, 'La sala de juego que estás buscando no existe. Verifica el código e inténtalo nuevamente.', 404);
+            }
+
+                
+
+            if ($gameRoomExists['expiration_date'] < date('Y-m-d H:i:s')) {
+                return GlobalHelper::generalResponse(null, 'Esta sala de juego ya no está disponible porque ha expirado. Por favor, verifique con el docente o inicie una nueva sala', 403);
+            }
+
+            $questions = QuestionService::findForRoomAndQuestionId($gameRoomExists['id'], $question_id);
+
+            $data = [
+                'game_room_id' => $gameRoomExists['id'],
+                'questions' => $questions,
+                'message' => 'Requerimientos no funcionales encontrados.',
+            ];
+
+            http_response_code(200);
+            echo json_encode($data);
+            return;
+        } catch (\Throwable $th) {
+            return GlobalHelper::generalResponse(null, $th->getMessage(), 500);
+        }
+    }
 }

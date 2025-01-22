@@ -37,6 +37,27 @@ class QuestionService
         $question = $stmt->fetch(PDO::FETCH_ASSOC);
         return $question;
     }
+
+    public static function findForRoom($room_id)
+    {
+        $query = "SELECT * FROM questions WHERE game_room_id = :room_id";
+        $stmt = Database::getConn()->prepare($query);
+        $stmt->bindParam(':room_id', $room_id);
+        $stmt->execute();
+        $questions = $stmt->fetchAll(PDO::FETCH_ASSOC);
+        return $questions;
+    }
+
+    public static function findForRoomAndQuestionId($room_id, $question_id )
+    {
+        $query = "SELECT * FROM questions WHERE game_room_id = :room_id and id = :question_id limit 1";
+        $stmt = Database::getConn()->prepare($query);
+        $stmt->bindParam(':room_id', $room_id);
+        $stmt->bindParam(':question_id', $question_id);
+        $stmt->execute();
+        $questions = $stmt->fetchAll(PDO::FETCH_ASSOC);
+        return $questions;
+    }
     
 
     public static function insertQuestions(array $questions, int $user_id): int

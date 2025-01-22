@@ -94,6 +94,18 @@ class GameService
         return $gameRoom;
     }
 
+    public static function getGameRoomById($room_id)
+    {
+        $query = "SELECT * FROM game_rooms WHERE id = :id limit 1";
+        $stmt = Database::getConn()->prepare($query);
+        $stmt->bindParam(':id', $room_id);
+        $stmt->execute();
+
+        $gameRoom = $stmt->fetch(PDO::FETCH_ASSOC);
+
+        return $gameRoom;
+    }
+
     public static function getGameScoreByUser($game_room_id, $user_id)
     {
         $query = "SELECT * FROM game_score WHERE game_room_id = :game_room_id and user_id = :user_id limit 1";
@@ -142,4 +154,33 @@ class GameService
         $stmt->execute();
         return Database::getConn()->lastInsertId();
     }
+
+    public static function editGameRoom(GameRoomEntity $gameRoom)
+    {
+        $query = "UPDATE game_rooms SET code = :code, user_id_created = :user_id_created, expiration_date = :expiration_date WHERE id = :id";
+        $stmt = Database::getConn()->prepare($query);
+        $stmt->bindParam(':id', $gameRoom->id);
+        $stmt->bindParam(':code', $gameRoom->code);
+        $stmt->bindParam(':user_id_created', $gameRoom->user_id_created);
+        $stmt->bindParam(':expiration_date', $gameRoom->expiration_date);
+        $stmt->execute();
+    }
+
+    public static function editQuestionRoom(QuestionEntity $question, $questionId)
+    {
+        $query = "UPDATE questions SET nfr = :nfr, variable = :variable, feedback1 = :feedback1, value = :value, feedback2 = :feedback2, recomend = :recomend, other_recommended_values = :other_recommended_values, feedback3 = :feedback3, validar = :validar WHERE id = :id";
+        $stmt = Database::getConn()->prepare($query);
+        $stmt->bindParam(':id', $questionId);
+        $stmt->bindParam(':nfr', $question->nfr);
+        $stmt->bindParam(':variable', $question->variable);
+        $stmt->bindParam(':feedback1', $question->feedback1);
+        $stmt->bindParam(':value', $question->value);
+        $stmt->bindParam(':feedback2', $question->feedback2);
+        $stmt->bindParam(':recomend', $question->recomend);
+        $stmt->bindParam(':other_recommended_values', $question->other_recommended_values);
+        $stmt->bindParam(':feedback3', $question->feedback3);
+        $stmt->bindParam(':validar', $question->validar);
+        $stmt->execute();
+    }
+
 }
