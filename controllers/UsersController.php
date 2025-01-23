@@ -25,11 +25,11 @@ class UsersController
     public static function editUser($user_id)
     {
         try {
-            $isAdmin = UserService::isAdmin($user_id);
+            // $isAdmin = UserService::isAdmin($user_id);
 
-            if (!$isAdmin) {
-                return GlobalHelper::generalResponse(null, 'Acceso denegado. Solo los administradores pueden acceder a este servicio.', 403);
-            }
+            // if (!$isAdmin) {
+            //     return GlobalHelper::generalResponse(null, 'Acceso denegado. Solo los administradores pueden acceder a este servicio.', 403);
+            // }
 
             $data = json_decode(file_get_contents('php://input'), true);
 
