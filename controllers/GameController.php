@@ -20,13 +20,19 @@ class GameController
                 gr.user_id_created AS game_room_user_id_created, 
                 gr.created_at AS game_room_created_at, 
                 gr.expiration_date AS game_room_expiration_date, 
-                gr.status AS game_room_status
+                gr.status AS game_room_status,
+                u.name AS names,
+                u.last_name  AS surnames
             FROM 
                 game_score gs
             INNER JOIN 
                 game_rooms gr 
             ON 
                 gs.game_room_id = gr.id
+            INNER JOIN 
+            	users u 
+            ON
+            	gs.user_id = u.id 
             WHERE 
                 gs.user_id = :user_id
             ORDER BY 
@@ -41,8 +47,8 @@ class GameController
             foreach ($gameHistory as $row) {
                 $formattedHistory[] = [
                     "id" => $row['id'],
-                    "user_id" => $row['user_id'],
-                    "game_room_id" => $row['game_room_id'],
+                    // "user_id" => $row['user_id'],
+                    // "game_room_id" => $row['game_room_id'],
                     "score" => $row['score'],
                     "answered_questions" => json_decode($row['answered_questions'], true),
                     "duration" => $row['duration'],
@@ -50,11 +56,16 @@ class GameController
                     "game_room" => [
                         "id" => $row['game_room_id'],
                         "code" => $row['game_room_code'],
-                        "user_id_created" => $row['game_room_user_id_created'],
-                        "created_at" => $row['game_room_created_at'],
-                        "expiration_date" => $row['game_room_expiration_date'],
-                        "status" => (bool)$row['game_room_status'],
+                        // "user_id_created" => $row['game_room_user_id_created'],
+                        // "created_at" => $row['game_room_created_at'],
+                        // "expiration_date" => $row['game_room_expiration_date'],
+                        // "status" => (bool)$row['game_room_status'],
                     ],
+                    "user" => [
+                        "id" => $row['user_id'],
+                        "names" => $row['names'],
+                        "surnames" => $row['surnames'],
+                    ]
                 ];
             }
 
@@ -312,14 +323,15 @@ class GameController
             }
 
             $participatingPlayers = GameService::getParticipatingPlayersByGameRoom($gameRoomId);
-
+            
             $formattedData = [];
             foreach ($participatingPlayers as $row) {
                 $formattedData[] = [
                     "id" => $row['id'],
                     "code" => $row['code'],
                     "score" => $row['score'],
-                    'fullNames' => $row['FullNames'],
+                    'names' => $row['name'],
+                    'surnames' => $row['last_name'],
                     "answered_questions" => json_decode($row['answered_questions'], true),
                     "duration" => $row['duration'],
                 ];
