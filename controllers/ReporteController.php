@@ -31,11 +31,59 @@ class ReporteController
             $conn->beginTransaction();
 
             $scores = GameService::getGameScoreByGameRoomId($conn, $game_room_id);
+            $reportsNFR = [];
+
+            foreach ($scores as $group) {
+                $answered_questions = json_decode($group["answered_questions"], true);
+
+                foreach ($answered_questions as $record) {
+                    $id = $record['id'];
+
+                    $found = false;
+                    foreach ($reportsNFR as &$result) {
+                        if ($result['id'] === $id) {
+                            if ($record['correct_value']) {
+                                $result['correct_value_true']++;
+                            } else {
+                                $result['correct_value_false']++;
+                            }
+
+                            if ($record['correct_recomend']) {
+                                $result['correct_recomend_true']++;
+                            } else {
+                                $result['correct_recomend_false']++;
+                            }
+
+                            if ($record['correct_variable']) {
+                                $result['correct_variable_true']++;
+                            } else {
+                                $result['correct_variable_false']++;
+                            }
+
+                            $found = true;
+                            break;
+                        }
+                    }
+
+                    if (!$found) {
+                        $reportsNFR[] = [
+                            'id' => $id,
+                            "nfr" => $record['nfr'],
+                            'correct_value_true' => $record['correct_value'] ? 1 : 0,
+                            'correct_value_false' => $record['correct_value'] ? 0 : 1,
+                            'correct_recomend_true' => $record['correct_recomend'] ? 1 : 0,
+                            'correct_recomend_false' => $record['correct_recomend'] ? 0 : 1,
+                            'correct_variable_true' => $record['correct_variable'] ? 1 : 0,
+                            'correct_variable_false' => $record['correct_variable'] ? 0 : 1
+                        ];
+                    }
+                }
+            }
 
             if (count($scores) == 0) {
-                if($language == 'es'){
+                if ($language == 'es') {
                     return GlobalHelper::generalResponse(null, 'El informe no está disponible porque todavía no hay datos de juego de los estudiantes.', 404);
-                }else{
+                } else {
                     return GlobalHelper::generalResponse(null, 'The report is not available because there is no data on student play yet.', 404);
                 }
             }
@@ -92,10 +140,24 @@ class ReporteController
                 $reportDetailsHtml .= "</tr>";
             }
 
+            $reportNFRHtml = "";
+            foreach ($reportsNFR as $reportNFR) {
+                $reportNFRHtml .= "<tr>";
+                $reportNFRHtml .= "<td>" . $reportNFR['id'] . "</td>";
+                $reportNFRHtml .= "<td>" . $reportNFR['nfr'] . "</td>";
+                $reportNFRHtml .= "<td>" . $reportNFR['correct_variable_true'] . "</td>";
+                $reportNFRHtml .= "<td>" . $reportNFR['correct_variable_false'] . "</td>";
+                $reportNFRHtml .= "<td>" . $reportNFR['correct_value_true'] . "</td>";
+                $reportNFRHtml .= "<td>" . $reportNFR['correct_value_false'] . "</td>";
+                $reportNFRHtml .= "<td>" . $reportNFR['correct_recomend_true'] . "</td>";
+                $reportNFRHtml .= "<td>" . $reportNFR['correct_recomend_false'] . "</td>";
+                $reportNFRHtml .= "</tr>";
+            }
+
             $imagen = 'resources/img/logo.png';
             $imagenBase64 = 'data:image/png;base64,' . base64_encode(file_get_contents($imagen));
 
-            if($language == 'es'){
+            if ($language == 'es') {
                 $html = str_replace('{{title}}', 'Reporte Académico', $html);
                 $html = str_replace('{{generation_date}}', 'Fecha de generación: ', $html);
                 $html = str_replace('{{teacher_title}}', 'Docente: ', $html);
@@ -113,8 +175,15 @@ class ReporteController
                 $html = str_replace('{{table_student_item5}}', 'Puntaje', $html);
                 $html = str_replace('{{table_student_item6}}', 'Duración', $html);
                 $html = str_replace('{{table_student_item7}}', 'Fecha Registro', $html);
+                $html = str_replace('{{subtitle_3}}', 'Detalle por RNF', $html);
+                $html = str_replace('{{table_NFR_item1}}', 'RNF', $html);
+                $html = str_replace('{{table_NFR_item2}}', 'Variable Lingüística', $html);
+                $html = str_replace('{{table_NFR_item3}}', 'Valor Lingüístico', $html);
+                $html = str_replace('{{table_NFR_item4}}', 'Recomendación', $html);
+                $html = str_replace('{{table_NFR_item5}}', 'Correctas', $html);
+                $html = str_replace('{{table_NFR_item6}}', 'Incorrectas', $html);
                 $html = str_replace('{{footer}}', 'Reporte generado por el sistema ', $html);
-            }else{
+            } else {
                 $html = str_replace('{{title}}', 'Academic Report', $html);
                 $html = str_replace('{{generation_date}}', 'Generation date: ', $html);
                 $html = str_replace('{{teacher_title}}', 'Teacher: ', $html);
@@ -132,6 +201,13 @@ class ReporteController
                 $html = str_replace('{{table_student_item5}}', 'Score', $html);
                 $html = str_replace('{{table_student_item6}}', 'Duration', $html);
                 $html = str_replace('{{table_student_item7}}', 'Registration Date', $html);
+                $html = str_replace('{{subtitle_3}}', 'Detail by NFR', $html);
+                $html = str_replace('{{table_NFR_item1}}', 'NFR', $html);
+                $html = str_replace('{{table_NFR_item2}}', 'Linguistic Variable', $html);
+                $html = str_replace('{{table_NFR_item3}}', 'Linguistic Value', $html);
+                $html = str_replace('{{table_NFR_item4}}', 'Recommendation', $html);
+                $html = str_replace('{{table_NFR_item5}}', 'Correct', $html);
+                $html = str_replace('{{table_NFR_item6}}', 'Incorrect', $html);
                 $html = str_replace('{{footer}}', 'Report generated by the system ', $html);
             }
 
@@ -147,15 +223,17 @@ class ReporteController
 
             $html = str_replace('{{reportDetails}}', $reportDetailsHtml, $html);
 
+            $html = str_replace('{{reportNFR}}', $reportNFRHtml, $html);
+
             $html = str_replace('{{year}}', $year, $html);
             $html = str_replace('{{imagen}}', $imagenBase64, $html);
 
-            $fileName = ($language == 'es' ? 'REPORTE-SALA' : 'REPORT-ROOM') .'-'. $generalSummary["game_room_code"] . '-' . date('Y-m-d_H-i-s') . '.pdf';
+            $fileName = ($language == 'es' ? 'REPORTE-SALA' : 'REPORT-ROOM') . '-' . $generalSummary["game_room_code"] . '-' . date('Y-m-d_H-i-s') . '.pdf';
 
             $conn->commit();
 
             $dompdf->loadHtml($html);
-            $dompdf->setPaper('A4', 'portrait');
+            $dompdf->setPaper('A4', 'landscape');
             $dompdf->render();
             $dompdf->stream($fileName);
         } catch (\Throwable $th) {

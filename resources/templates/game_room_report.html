@@ -15,7 +15,7 @@
             display: flex;
             justify-content: space-between;
             align-items: center;
-            padding: 10px 0px;
+            padding: 10px 0;
         }
 
         .header h1 {
@@ -33,15 +33,17 @@
         table {
             width: 100%;
             border-collapse: collapse;
-            margin-bottom: 30px;
+            margin-bottom: 20px; /* Espacio entre tablas */
         }
 
         th,
         td {
             border: 1px solid #ddd;
-            padding: 5.5px;
+            padding: 5px;
             text-align: center;
             font-size: 14px;
+            word-wrap: break-word;
+            overflow-wrap: break-word; /* Evitar texto desbordado */
         }
 
         th {
@@ -52,6 +54,7 @@
         h2,
         h3 {
             text-align: center;
+            margin: 20px 0; /* Margen superior e inferior para separar secciones */
         }
 
         .footer {
@@ -60,28 +63,13 @@
             left: 0;
             width: 100%;
             text-align: center;
-            padding: 10px 0px;
+            padding: 10px 0;
             background-color: #f4f4f4;
             font-size: 12px;
         }
 
-        .signature-container {
-            text-align: center;
-            margin-top: 50px;
-        }
-
-        .signature-line {
-            margin-top: 50px;
-            border-top: 1px solid #000;
-            width: 300px;
-            margin-left: auto;
-            margin-right: auto;
-        }
-
-        .signature-label {
-            margin-top: 10px;
-            font-size: 14px;
-            text-align: center;
+        p {
+            margin: 5px 0; /* Evitar espacios en blanco */
         }
     </style>
 </head>
@@ -94,7 +82,7 @@
         <h1>{{title}}</h1>
     </div>
     <div class="footer">
-        <p>{{footer}}FRUIT. © {{year}}</p>
+        <p>{{footer}} FRUIT. © {{year}}</p>
     </div>
 
     <p><strong>{{generation_date}}</strong>{{generated_at}}</p>
@@ -115,6 +103,32 @@
             <td>{{highest_score}}</td>
             <td>(ID: {{highest_scorer_id}}) {{highest_scorer_name}}</td>
         </tr>
+    </table>
+
+    <h2>{{subtitle_3}}</h2>
+    <table>
+        <thead>
+            <tr>
+                <th>ID</th>
+                <th>{{table_NFR_item1}}</th>
+                <th colspan="2">{{table_NFR_item2}}</th>
+                <th colspan="2">{{table_NFR_item3}}</th>
+                <th colspan="2">{{table_NFR_item4}}</th>
+            </tr>
+            <tr>
+                <th></th>
+                <th></th>
+                <th>{{table_NFR_item5}}</th>
+                <th>{{table_NFR_item6}}</th>
+                <th>{{table_NFR_item5}}</th>
+                <th>{{table_NFR_item6}}</th>
+                <th>{{table_NFR_item5}}</th>
+                <th>{{table_NFR_item6}}</th>
+            </tr>
+        </thead>
+        <tbody>
+            {{reportNFR}}
+        </tbody>
     </table>
 
     <h2>{{subtitle_2}}</h2>
